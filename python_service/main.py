@@ -1,32 +1,36 @@
-import os
+from fastapi import FastAPI, Request
+from pydantic import BaseModel
+import aioredis
 import json
-import asyncio
-from fastapi import FastAPI
-import redis.asyncio as redis
+import os
 
 app = FastAPI()
 
-redis_url = os.environ.get("REDIS_URL", "redis://localhost:6379")
+REDIS_URL = os.getenv("REDIS_URL", "redis://localhost:6379")
 
-async def redis_listener():
-    try:
-        r = redis.from_url(redis_url)
-        pubsub = r.pubsub()
-        await pubsub.subscribe("notifications")
-        print("Subscribed to 'notifications' channel in Redis.", flush=True)
-        async for message in pubsub.listen():
-            if message["type"] == "message":
-                data = json.loads(message["data"])
-                print(f"Received notification: {data}", flush=True)
-                # Simulate sending a push notification
-                print(f"Pushing notification to user {data.get('userId')}: {data.get('message')}", flush=True)
-    except Exception as e:
-        print(f"Redis listener error: {e}", flush=True)
+class CommentRequest(BaseModel):
+    text: str
+
+# Basic Comment Safety Engine (MVP)
+BAD_WORDS = {"spam", "abuse", "harass", "profanity", "kill", "idiot"}
+
+@app.post("/filter")
+async def filter_comment(req: CommentRequest):
+    text_lower = req.text.lower()
+    
+    # 1. Profanity & Harassment Check
+    is_flagged = any(bad_word in text_lower for bad_word in BAD_WORDS)
+    
+    # 2. Spam / Repetition Check (mocked as length check for MVP)
+    if len(text_lower) > 500:
+        is_flagged = True
+
+    return {
+        "isFlagged": is_flagged,
+        "reason": "Violates safety guidelines" if is_flagged else None
+    }
 
 @app.on_event("startup")
 async def startup_event():
-    asyncio.create_task(redis_listener())
-
-@app.get("/")
-def read_root():
-    return {"status": "ok", "service": "Notification Service"}
+    print("Python Microservice Started - Listening for notifications and filtering comments.")
+    # Redis subscription would go here if needed

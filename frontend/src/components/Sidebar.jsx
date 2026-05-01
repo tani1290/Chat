@@ -1,73 +1,50 @@
 import { useState, useEffect } from 'react';
 import axios from 'axios';
-import { LogOut, Search } from 'lucide-react';
+import { LogOut, User as UserIcon, Link as LinkIcon } from 'lucide-react';
 
-export default function Sidebar({ socket, activeConversation, setActiveConversation, logout, user }) {
+export default function Sidebar({ socket, activeConversation, setActiveConversation, logout, user, setCurrentView }) {
   const [conversations, setConversations] = useState([]);
-  const [searchQuery, setSearchQuery] = useState('');
-  const [searchResults, setSearchResults] = useState([]);
 
   useEffect(() => {
     const fetchConversations = async () => {
-      const res = await axios.get(`${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/conversations`);
-      setConversations(res.data);
+      try {
+        const res = await axios.get(`${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/conversations`);
+        setConversations(res.data);
+      } catch(err) {
+        console.error(err);
+      }
     };
     fetchConversations();
   }, [activeConversation]);
 
-  useEffect(() => {
-    if (searchQuery.length > 2) {
-      axios.get(`${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/users/search?q=${searchQuery}`)
-        .then(res => setSearchResults(res.data));
-    } else {
-      setSearchResults([]);
-    }
-  }, [searchQuery]);
-
-  const startConversation = async (receiverId) => {
-    const res = await axios.post(`${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/conversations`, { receiverId });
-    setActiveConversation(res.data);
-    setSearchQuery('');
-    setSearchResults([]);
-  };
-
   return (
     <div className="sidebar">
       <div style={{ padding: '20px', borderBottom: '1px solid var(--border)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-        <h3 style={{ margin: 0 }}>Chats</h3>
-        <button onClick={logout} style={{ background: 'transparent', border: 'none', color: 'var(--text-muted)', cursor: 'pointer' }}><LogOut size={20} /></button>
-      </div>
-
-      <div style={{ padding: '16px' }}>
-        <div style={{ position: 'relative' }}>
-          <Search size={18} style={{ position: 'absolute', top: '12px', left: '12px', color: 'var(--text-muted)' }} />
-          <input 
-            type="text" 
-            placeholder="Search users..." 
-            value={searchQuery}
-            onChange={e => setSearchQuery(e.target.value)}
-            style={{ paddingLeft: '38px', borderRadius: '20px' }}
-          />
+        <h3 style={{ margin: 0 }}>Connections</h3>
+        <div style={{ display: 'flex', gap: '10px' }}>
+          <button onClick={() => setCurrentView('profile')} style={{ background: 'transparent', border: 'none', color: 'var(--text-muted)', cursor: 'pointer' }} title="Profile">
+            <UserIcon size={20} />
+          </button>
+          <button onClick={logout} style={{ background: 'transparent', border: 'none', color: 'var(--text-muted)', cursor: 'pointer' }} title="Logout">
+            <LogOut size={20} />
+          </button>
         </div>
       </div>
 
+      <div style={{ padding: '16px', borderBottom: '1px solid var(--border)' }}>
+        <button 
+          onClick={() => setCurrentView('connect')} 
+          className="btn" 
+          style={{ width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}
+        >
+          <LinkIcon size={16} /> New Connection
+        </button>
+      </div>
+
       <div style={{ flex: 1, overflowY: 'auto' }}>
-        {searchResults.length > 0 ? (
-          <div style={{ padding: '0 16px' }}>
-            <h4 style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginBottom: '8px' }}>Search Results</h4>
-            {searchResults.map(u => (
-              <div key={u._id} onClick={() => startConversation(u._id)} style={{ padding: '12px', cursor: 'pointer', borderRadius: '8px', marginBottom: '4px', background: 'rgba(255,255,255,0.05)' }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                  <div style={{ width: '40px', height: '40px', borderRadius: '50%', background: 'var(--primary)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 'bold' }}>
-                    {u.username[0].toUpperCase()}
-                  </div>
-                  <div>
-                    <div style={{ fontWeight: '500' }}>{u.username}</div>
-                    <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>{u.email}</div>
-                  </div>
-                </div>
-              </div>
-            ))}
+        {conversations.length === 0 ? (
+          <div style={{ padding: '20px', textAlign: 'center', color: 'var(--text-muted)', fontSize: '0.9rem' }}>
+            No connections yet. Establish a connection to start messaging.
           </div>
         ) : (
           <div>
@@ -89,13 +66,17 @@ export default function Sidebar({ socket, activeConversation, setActiveConversat
                   }}
                 >
                   <div style={{ position: 'relative' }}>
-                    <div style={{ width: '48px', height: '48px', borderRadius: '50%', background: 'var(--accent)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 'bold', fontSize: '1.2rem' }}>
-                      {otherUser?.username[0].toUpperCase() || 'G'}
-                    </div>
-                    {otherUser?.isOnline && <span className="status-dot" style={{ position: 'absolute', bottom: 2, right: 2, border: '2px solid var(--bg-dark)' }}></span>}
+                    {otherUser?.profilePicture ? (
+                      <img src={otherUser.profilePicture} alt="Avatar" style={{ width: '48px', height: '48px', borderRadius: '50%', objectFit: 'cover' }} />
+                    ) : (
+                      <div style={{ width: '48px', height: '48px', borderRadius: '50%', background: 'var(--accent)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 'bold', fontSize: '1.2rem', color: 'white' }}>
+                        {otherUser?.username?.[0]?.toUpperCase() || 'U'}
+                      </div>
+                    )}
+                    {otherUser?.isOnline && <span className="status-dot" style={{ position: 'absolute', bottom: 2, right: 2, border: '2px solid var(--bg-panel)' }}></span>}
                   </div>
                   <div style={{ flex: 1 }}>
-                    <div style={{ fontWeight: '600' }}>{otherUser?.username || conv.name}</div>
+                    <div style={{ fontWeight: '600' }}>{otherUser?.username || 'Unknown User'}</div>
                     <div style={{ fontSize: '0.85rem', color: 'var(--text-muted)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', maxWidth: '180px' }}>
                       {conv.lastMessage?.text || 'Start chatting...'}
                     </div>

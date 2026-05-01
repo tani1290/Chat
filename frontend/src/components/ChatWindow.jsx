@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import axios from 'axios';
 import { Send, Check, CheckCheck } from 'lucide-react';
+import CryptoJS from 'crypto-js';
 
 export default function ChatWindow({ socket, conversation, user }) {
   const [messages, setMessages] = useState([]);
@@ -66,9 +67,11 @@ export default function ChatWindow({ socket, conversation, user }) {
     e.preventDefault();
     if (!newMessage.trim()) return;
 
+    const encryptedText = CryptoJS.AES.encrypt(newMessage, conversation._id).toString();
+
     socket.emit('send_message', {
       conversationId: conversation._id,
-      text: newMessage
+      text: encryptedText
     });
 
     setNewMessage('');
@@ -112,10 +115,20 @@ export default function ChatWindow({ socket, conversation, user }) {
       <div style={{ flex: 1, padding: '20px', overflowY: 'auto', display: 'flex', flexDirection: 'column' }}>
         {messages.map((msg, index) => {
           const isMe = msg.senderId._id === user._id || msg.senderId === user._id;
+          
+          let decryptedText = msg.text;
+          try {
+            const bytes = CryptoJS.AES.decrypt(msg.text, conversation._id);
+            const originalText = bytes.toString(CryptoJS.enc.Utf8);
+            if (originalText) decryptedText = originalText;
+          } catch(e) {
+            // fallback to original if decryption fails (e.g., old unencrypted msg)
+          }
+
           return (
             <div key={msg._id || index} className={`message-bubble ${isMe ? 'sent' : 'received'}`}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', gap: '8px' }}>
-                <span style={{ fontSize: '0.95rem' }}>{msg.text}</span>
+                <span style={{ fontSize: '0.95rem' }}>{decryptedText}</span>
                 {isMe && (
                   <span className="msg-info" style={{ display: 'flex', alignItems: 'center' }}>
                     {msg.status === 'seen' ? <CheckCheck size={14} color="#60a5fa" /> : <Check size={14} color="rgba(255,255,255,0.6)" />}

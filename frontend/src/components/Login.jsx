@@ -1,11 +1,12 @@
 import { useState, useContext } from 'react';
 import { AuthContext } from '../context/AuthContext';
 import { Link } from 'react-router-dom';
+import { GoogleLogin } from '@react-oauth/google';
 
 export default function Login() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const { login } = useContext(AuthContext);
+  const { login, googleLogin } = useContext(AuthContext);
   const [error, setError] = useState(null);
 
   const handleSubmit = async (e) => {
@@ -26,6 +27,16 @@ export default function Login() {
         <input type="password" placeholder="Password" required value={password} onChange={e => setPassword(e.target.value)} />
         <button type="submit" className="btn">Login</button>
       </form>
+      <div style={{ marginTop: '20px', display: 'flex', justifyContent: 'center' }}>
+        <GoogleLogin
+          onSuccess={credentialResponse => {
+            googleLogin(credentialResponse.credential).catch(err => setError('Google Login Failed'));
+          }}
+          onError={() => {
+            setError('Google Login Failed');
+          }}
+        />
+      </div>
       <p style={{ marginTop: '16px', fontSize: '0.9rem' }}>
         Don't have an account? <Link to="/register" style={{ color: 'var(--primary)', textDecoration: 'none' }}>Register</Link>
       </p>
