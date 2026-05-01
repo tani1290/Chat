@@ -6,3 +6,4 @@ python_service/__pycache__/
 *.env
 .DS_Store
 output.txt
+client_secret*.json
