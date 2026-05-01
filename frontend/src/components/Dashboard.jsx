@@ -36,8 +36,16 @@ export default function Dashboard() {
           <ChatWindow socket={socket} conversation={activeConversation} user={user} />
         )}
         {currentView === 'chat' && !activeConversation && (
-          <div style={{ color: 'var(--text-muted)', display: 'flex', height: '100%', justifyContent: 'center', alignItems: 'center' }}>
-            <h3>Select a conversation to start chatting</h3>
+          <div style={{ color: 'var(--text-muted)', display: 'flex', flexDirection: 'column', height: '100%', justifyContent: 'center', alignItems: 'center', gap: '20px' }}>
+            <div style={{ width: '80px', height: '80px', borderRadius: '50%', background: 'rgba(16, 185, 129, 0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+              <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="var(--primary)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"></path>
+              </svg>
+            </div>
+            <h2>Welcome, {user?.username}</h2>
+            <p style={{ maxWidth: '400px', textAlign: 'center', lineHeight: '1.5' }}>
+              Select a conversation from the sidebar to start securely messaging, or generate a code to connect with new people.
+            </p>
           </div>
         )}
         {currentView === 'profile' && <Profile />}

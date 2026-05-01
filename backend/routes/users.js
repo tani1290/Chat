@@ -14,10 +14,10 @@ router.get('/profile', auth, async (req, res) => {
 
 router.put('/profile', auth, async (req, res) => {
   try {
-    const { bio, profilePicture, role } = req.body;
+    const { bio, profilePicture, role, statusMessage, pronouns, location } = req.body;
     const user = await User.findByIdAndUpdate(
       req.user._id,
-      { $set: { bio, profilePicture, role } },
+      { $set: { bio, profilePicture, role, statusMessage, pronouns, location } },
       { new: true }
     ).select('-passwordHash');
     res.json(user);

@@ -3,6 +3,6 @@ backend/node_modules/
 frontend/node_modules/
 python_service/venv/
 python_service/__pycache__/
-.env
+*.env
 .DS_Store
 output.txt

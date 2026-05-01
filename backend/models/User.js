@@ -7,7 +7,10 @@ const userSchema = new mongoose.Schema({
   googleId: { type: String, sparse: true },
   role: { type: String, enum: ['user', 'influencer', 'corporate'], default: 'user' },
   bio: { type: String, default: '' },
-  profilePicture: { type: String, default: '' },
+  statusMessage: { type: String, default: '' },
+  pronouns: { type: String, default: '' },
+  location: { type: String, default: '' },
+  profilePicture: { type: String, default: '' }, // base64 or URL
   isOnline: { type: Boolean, default: false },
   lastSeen: { type: Date, default: Date.now },
 }, { timestamps: true });

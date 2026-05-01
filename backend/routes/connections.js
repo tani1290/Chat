@@ -9,15 +9,20 @@ const auth = require('../middleware/auth');
 // Generate a 12-digit connection code
 router.post('/generate', auth, async (req, res) => {
   try {
+    const { expiresIn } = req.body; // minutes: 15, 60, 1440, or null for never
     const code = crypto.randomInt(100000000000, 999999999999).toString();
-    const expiresAt = new Date(Date.now() + 60 * 60 * 1000); // 1 hour
+
+    let validUntil = null;
+    if (expiresIn && parseInt(expiresIn) > 0) {
+      validUntil = new Date(Date.now() + parseInt(expiresIn) * 60 * 1000);
+    }
 
     await ConnectionCode.deleteMany({ user: req.user._id }); // Invalidate old codes
-    
-    const connectionCode = new ConnectionCode({ code, user: req.user._id, expiresAt });
+
+    const connectionCode = new ConnectionCode({ code, user: req.user._id, validUntil });
     await connectionCode.save();
 
-    res.json({ code, expiresAt });
+    res.json({ code, validUntil });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
@@ -32,7 +37,13 @@ router.post('/connect', auth, async (req, res) => {
     const connectionCode = await ConnectionCode.findOne({ code });
     if (!connectionCode) return res.status(404).json({ error: 'Code not found or expired' });
 
-    if (connectionCode.user.toString() === req.user._id) {
+    // Manual expiry check for codes with a validUntil date
+    if (connectionCode.validUntil && new Date() > connectionCode.validUntil) {
+      await ConnectionCode.deleteOne({ _id: connectionCode._id });
+      return res.status(410).json({ error: 'Code has expired' });
+    }
+
+    if (connectionCode.user.toString() === req.user._id.toString()) {
       return res.status(400).json({ error: 'Cannot connect with yourself' });
     }
 

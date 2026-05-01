@@ -13,6 +13,7 @@ const userRoutes = require('./routes/users');
 const conversationRoutes = require('./routes/conversations');
 const messageRoutes = require('./routes/messages');
 const connectionRoutes = require('./routes/connections');
+const postRoutes = require('./routes/posts');
 
 const User = require('./models/User');
 const Message = require('./models/Message');
@@ -30,6 +31,7 @@ app.use('/api/users', userRoutes);
 app.use('/api/conversations', conversationRoutes);
 app.use('/api/messages', messageRoutes);
 app.use('/api/connections', connectionRoutes);
+app.use('/api/posts', postRoutes);
 
 // Socket.io Setup
 const io = new Server(server, {
@@ -79,12 +81,13 @@ io.on('connection', async (socket) => {
   });
 
   socket.on('send_message', async (data) => {
-    const { conversationId, text } = data;
+    const { conversationId, text, attachment } = data;
     try {
       const message = new Message({
         conversationId,
         senderId: socket.user._id,
-        text,
+        text: text || '',
+        attachment: attachment || '',
         status: 'sent'
       });
       await message.save();
