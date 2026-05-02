@@ -10,7 +10,6 @@
     "preview": "vite preview"
   },
   "dependencies": {
-    "@react-oauth/google": "^0.13.5",
     "axios": "^1.15.2",
     "crypto-js": "^4.2.0",
     "firebase": "^12.12.1",

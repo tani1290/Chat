@@ -1,9 +1,29 @@
+# Dependencies
 node_modules/
 backend/node_modules/
 frontend/node_modules/
 python_service/venv/
 python_service/__pycache__/
+
+# Environment & secrets
 *.env
-.DS_Store
-output.txt
 client_secret*.json
+firebase-service-account*.json
+serviceAccountKey*.json
+
+# Build output
+frontend/dist/
+frontend/.vite/
+
+# Logs
+*.log
+npm-debug.log*
+
+# OS artifacts
+.DS_Store
+Thumbs.db
+output.txt
+
+# Editor
+.vscode/
+.idea/
