@@ -1,6 +1,9 @@
 import { useState, useEffect, useRef } from 'react';
 import axios from 'axios';
-import { Copy, Check, Clock } from 'lucide-react';
+import { Copy, Check, Clock, Share2, Link } from 'lucide-react';
+
+const APP_URL = import.meta.env.VITE_APP_URL || window.location.origin;
+
 
 const API = import.meta.env.VITE_API_URL || 'http://localhost:5000';
 
@@ -24,11 +27,12 @@ function formatCountdown(ms) {
 
 export default function Connections({ onConnect }) {
   const [generatedCode, setGeneratedCode] = useState('');
-  const [validUntil, setValidUntil] = useState(null); // Date or null
-  const [expiresIn, setExpiresIn] = useState(60); // minutes
+  const [validUntil, setValidUntil] = useState(null);
+  const [expiresIn, setExpiresIn] = useState(60);
   const [inputCode, setInputCode] = useState('');
   const [error, setError] = useState('');
   const [copied, setCopied] = useState(false);
+  const [copiedLink, setCopiedLink] = useState(false);
   const [countdown, setCountdown] = useState('');
   const timerRef = useRef(null);
 
@@ -71,6 +75,29 @@ export default function Connections({ onConnect }) {
     navigator.clipboard.writeText(generatedCode);
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
+  };
+
+  const inviteLink = generatedCode ? `${APP_URL}/invite/${generatedCode}` : '';
+
+  const shareLink = async () => {
+    if (navigator.share) {
+      try {
+        await navigator.share({
+          title: 'Join me on Privacy Chat',
+          text: `You've been invited to connect securely. Click the link or enter code ${generatedCode} in the app.`,
+          url: inviteLink,
+        });
+        return;
+      } catch (e) { /* user cancelled */ }
+    }
+    // Fallback: copy link to clipboard
+    copyLink();
+  };
+
+  const copyLink = () => {
+    navigator.clipboard.writeText(inviteLink);
+    setCopiedLink(true);
+    setTimeout(() => setCopiedLink(false), 2500);
   };
 
   const connectToUser = async (e) => {
@@ -155,22 +182,56 @@ export default function Connections({ onConnect }) {
               </span>
               <button
                 onClick={copyCode}
-                title="Copy to clipboard"
+                title="Copy code"
                 style={{
                   background: copied ? 'rgba(16,185,129,0.15)' : 'var(--bg-panel)',
                   border: `1px solid ${copied ? 'var(--primary)' : 'var(--border)'}`,
                   color: copied ? 'var(--primary)' : 'var(--text-muted)',
-                  borderRadius: '8px',
-                  padding: '10px',
-                  cursor: 'pointer',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  transition: 'all 0.2s'
+                  borderRadius: '8px', padding: '10px', cursor: 'pointer',
+                  display: 'flex', alignItems: 'center', justifyContent: 'center', transition: 'all 0.2s'
                 }}
               >
                 {copied ? <Check size={18} /> : <Copy size={18} />}
               </button>
+            </div>
+
+            {/* Share Buttons */}
+            <div style={{ display: 'flex', gap: '8px', marginBottom: '12px' }}>
+              <button
+                onClick={shareLink}
+                style={{
+                  flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px',
+                  padding: '9px', borderRadius: '8px', border: '1px solid var(--primary)',
+                  background: 'rgba(16,185,129,0.12)', color: 'var(--primary)',
+                  cursor: 'pointer', fontSize: '0.85rem', fontWeight: '600', transition: 'all 0.2s'
+                }}
+                onMouseOver={e => e.currentTarget.style.background = 'rgba(16,185,129,0.2)'}
+                onMouseOut={e => e.currentTarget.style.background = 'rgba(16,185,129,0.12)'}
+              >
+                <Share2 size={15} /> Share Invite
+              </button>
+              <button
+                onClick={copyLink}
+                title="Copy invite link"
+                style={{
+                  flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px',
+                  padding: '9px', borderRadius: '8px',
+                  border: `1px solid ${copiedLink ? 'var(--primary)' : 'var(--border)'}`,
+                  background: copiedLink ? 'rgba(16,185,129,0.12)' : 'transparent',
+                  color: copiedLink ? 'var(--primary)' : 'var(--text-muted)',
+                  cursor: 'pointer', fontSize: '0.85rem', fontWeight: '600', transition: 'all 0.2s'
+                }}
+              >
+                {copiedLink ? <Check size={15} /> : <Link size={15} />}
+                {copiedLink ? 'Link Copied!' : 'Copy Link'}
+              </button>
+            </div>
+
+            {/* Invite Link Preview */}
+            <div style={{ padding: '8px 12px', background: 'rgba(0,0,0,0.2)', borderRadius: '6px', marginBottom: '12px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)', wordBreak: 'break-all', flex: 1, fontFamily: 'monospace' }}>
+                {inviteLink}
+              </span>
             </div>
 
             {/* Countdown Timer */}
